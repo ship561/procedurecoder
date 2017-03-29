@@ -6,12 +6,13 @@ from sklearn.metrics.pairwise import linear_kernel
 import drchrono_utils as du
 
 
-
+## example corpus for testing
 ex_corpus = ['here is a sentence.',
              'my lower back is hurt. consider chiropractic adjustment on spine',
              'i hate black cats',
              'similarly, for text processing we also have another improtant concept of n-grams. n-gram is a sequence of n consecutive words.']
 
+## load in models
 doc_notes_vectorizer = pickle.load(open("models/doc_notes_vectorizer_save.p", "rb"))
 cpt_tfidf_vectorizer = pickle.load(open("models/cpt_vectorizer_save.p", "rb"))
 x_tfidf = pickle.load(open("models/x_tfidf_save.p", "rb"))
@@ -20,7 +21,7 @@ outpatient_bg_probs = pickle.load(open("models/outpatient_bg_probs_save.p", "rb"
 chiropractic_bayes_mod = pickle.load(open("models/chiropractic_bayes_mod_save.p", "rb"))
 chiropractic_bg_probs = pickle.load(open("models/chiropractic_bg_probs_save.p", "rb"))
 
-# # corpus' from data bases
+## cpt description corpus' from data bases
 cpt_descriptions = pickle.load(open("models/cpt_descript_save.p", "rb"))
 
 
@@ -33,7 +34,7 @@ def rank_to_score(norm_rank):
 
 def classifier_combiner(k, rank_cpt_knn, rank_cpt_bayes):
     """This function combines the keyword (TF-idf) and NB models using the
-relative ranks and belief in keywords vs. model probability"""
+       relative ranks and belief in keywords vs. model probability"""
 
     score_cpt_knn = rank_to_score(rank_cpt_knn)
     score_cpt_bayes = rank_to_score(rank_cpt_bayes)  # rank_to_score(rank_cpt_bayes)
@@ -43,7 +44,8 @@ relative ranks and belief in keywords vs. model probability"""
 
 
 def normalize_ranks(raw_ranks_dict):
-    """Takes a numerical (integer) ranks and normalizes them to interval [0, 1]"""
+    """Takes a numerical (integer) ranks (array/list) and normalizes them
+    to interval [0, 1]"""
     
     N = float(max(raw_ranks_dict.values()))
     norm_ranks = dict(map(lambda (k, v): (k, v/N), raw_ranks_dict.iteritems()))
@@ -51,7 +53,7 @@ def normalize_ranks(raw_ranks_dict):
 
 
 def calc_knn_document(d):
-    """Ranks documents according the CPT code descriptions using cosine similarly."""
+    """Ranks document (d) according the CPT code descriptions using cosine similarly."""
     
     new_x = cpt_tfidf_vectorizer.transform([d])
     sims = linear_kernel(new_x, x_tfidf).flatten()
@@ -87,6 +89,10 @@ def calc_top_cpt_codes(d, alpha=0.5, n=5):
                                 '9894x': ['Chiropractic adjustment',
                                           'Chiropractic adjustment']})
 
+    ## these classifiers should be built into a better data structure
+    ## but are kept this way due to time constraints. Should move it
+    ## into a dictionary where key=cpt code block and value=NB
+    ## classifier model.
     bayes_9920x = calc_bayes_sentence(d, outpatient_bayes_mod)
     bayes_9894x = calc_bayes_sentence(d, chiropractic_bayes_mod)
     bayes_ranks = {'9920x': bayes_rank(bayes_9920x[0, 1], outpatient_bg_probs),
